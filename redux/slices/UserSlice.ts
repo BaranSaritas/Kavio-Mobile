@@ -1,9 +1,9 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
+import Constants from 'expo-constants';
 import Axios from '../../api/axiosInstance';
 import { generateMessage } from '../../utils/helpers';
-import Constants from 'expo-constants';
 
 const baseURL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8080/api';
 
@@ -39,6 +39,25 @@ export const register = createAsyncThunk(
   }
 );
 
+export const getUserImages = createAsyncThunk(
+  "user/images",
+  async (_, thunkAPI) => {
+    try {
+      const state: any = thunkAPI.getState();
+      const cardId = state.user.user?.cardId;
+
+      if (!cardId) return thunkAPI.rejectWithValue("CardId bulunamadı");
+
+      const res = await Axios.get(`/card/user-images/${cardId}`);
+
+      return res.data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(generateMessage(error, "UserImages Error"));
+    }
+  }
+);
+
+
 export const hydrateAuth = createAsyncThunk('auth/hydrate', async () => {
   const token = await AsyncStorage.getItem('accessToken');
   if (!token) return null;
@@ -72,6 +91,10 @@ interface UserState {
   isSuccess: boolean;
   isError: boolean;
   message: string;
+   images: {
+    bannerImg: string | null;
+    profileImg: string | null;
+  };
   user: any;
   isAuthenticated: boolean;
   isHydrated: boolean;
@@ -82,6 +105,10 @@ const initialState: UserState = {
   isSuccess: false,
   isError: false,
   message: '',
+   images: {
+    bannerImg: null,
+    profileImg: null,
+  },
   user: null,
   isAuthenticated: false,
   isHydrated: false,
@@ -124,6 +151,20 @@ const UserSlice = createSlice({
         state.isSuccess = false;
         state.isError = true;
         state.message = action?.payload as string;
+      })
+      builder
+      .addCase(getUserImages.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getUserImages.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.images = action.payload; // banner + profile
+      })
+      .addCase(getUserImages.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload as string;
       })
       .addCase(register.pending, (state) => {
         state.isLoading = true;

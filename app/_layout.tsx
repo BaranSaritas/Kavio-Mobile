@@ -2,14 +2,30 @@ import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import Toast from "react-native-toast-message";
-import { Provider } from "react-redux";
+import { Provider, useSelector } from "react-redux";
+import FullScreenLoader from "../components/FullScreenLoader";
 import { hydrateAuth } from "../redux/slices/UserSlice";
-import store from "../redux/store";
+import store, { RootState } from "../redux/store";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function LayoutContent() {
+  const { isHydrated } = useSelector((state: RootState) => state.user);
 
+  // Hydrate tamamlanana kadar premium loading
+  if (!isHydrated) {
+    return <FullScreenLoader />;
+  }
+
+  return (
+    <>
+      <Slot />
+      <Toast />
+    </>
+  );
+}
+
+export default function RootLayout() {
   useEffect(() => {
     store.dispatch(hydrateAuth()).finally(() => {
       SplashScreen.hideAsync();
@@ -18,8 +34,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <Slot /> 
-      <Toast />
+      <LayoutContent />
     </Provider>
   );
 }
