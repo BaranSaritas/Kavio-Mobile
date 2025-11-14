@@ -1,33 +1,20 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import Axios from '../../api/axiosInstance';
-
-interface CompanyData {
-  [key: string]: any;
-}
-
-interface CompanyState {
-  isLoading: boolean;
-  isSuccess: boolean;
-  isError: boolean;
-  message: string;
-  data: CompanyData | null;
-}
 
 export const getCompanyData = createAsyncThunk(
   'profile-management/get-company-page',
-  async ({ cardId, signal }: { cardId: string; signal?: AbortSignal }, { rejectWithValue }) => {
+  async ({ cardId, signal }: any, { rejectWithValue }) => {
     try {
-      const response = await Axios.get(`/profile-management/get-company-page/${cardId}`, {
-        signal,
-      });
+      const response = await Axios.get(
+        `/profile-management/get-company-page/${cardId}`,
+        { signal }
+      );
       return response.data;
     } catch (error: any) {
       if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
         return rejectWithValue('İstek iptal edildi');
       }
-
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
@@ -35,19 +22,18 @@ export const getCompanyData = createAsyncThunk(
 
 export const getOtherCompanyData = createAsyncThunk(
   'other-profile-management/get-company-page',
-  async ({ cardId, signal }: { cardId: string; signal?: AbortSignal }, { rejectWithValue }) => {
+  async ({ cardId, signal }: any, { rejectWithValue }) => {
     try {
-      const response = await Axios.get(`/other-profile-management/get-company-page/${cardId}`, {
-        signal,
-      });
+      const response = await Axios.get(
+        `/other-profile-management/get-company-page/${cardId}`,
+        { signal }
+      );
       return response.data;
     } catch (error: any) {
       if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
         return rejectWithValue('İstek iptal edildi');
       }
-
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
@@ -55,10 +41,7 @@ export const getOtherCompanyData = createAsyncThunk(
 
 export const updateCompanyData = createAsyncThunk(
   'profile-management/update-company-information',
-  async (
-    { cardId, updatedData }: { cardId: string; updatedData: any },
-    { rejectWithValue }
-  ) => {
+  async ({ cardId, updatedData }: any, { rejectWithValue }) => {
     try {
       const response = await Axios.post(
         `/profile-management/update-company-information/${cardId}`,
@@ -67,11 +50,18 @@ export const updateCompanyData = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
 );
+
+interface CompanyState {
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  message: string;
+  data: any;
+}
 
 const initialState: CompanyState = {
   isLoading: false,
@@ -85,7 +75,7 @@ const CompanySlice = createSlice({
   name: 'company',
   initialState,
   reducers: {
-    setCompanyData(state, action: PayloadAction<CompanyData>) {
+    setCompanyData(state, action) {
       state.data = action.payload;
     },
     resetCompany(state) {
@@ -93,7 +83,6 @@ const CompanySlice = createSlice({
       state.isSuccess = false;
       state.isError = false;
       state.message = '';
-      state.data = null;
     },
   },
   extraReducers: (builder) => {
@@ -141,7 +130,6 @@ const CompanySlice = createSlice({
         state.isSuccess = false;
         state.isError = true;
         state.message = (action.payload as string) || 'Beklenmeyen Bir Hata Oluştu';
-        state.data = null;
       });
   },
 });

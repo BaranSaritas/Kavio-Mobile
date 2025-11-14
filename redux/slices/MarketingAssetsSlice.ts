@@ -1,33 +1,20 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import Axios from '../../api/axiosInstance';
 
-interface MarketingAssetsData {
-  [key: string]: any;
-}
-
-interface MarketingAssetsState {
-  isLoading: boolean;
-  isSuccess: boolean;
-  isError: boolean;
-  message: string;
-  data: MarketingAssetsData | null;
-}
-
 export const getMarketingAssetsData = createAsyncThunk(
   'profile-management/get-catalog-page',
-  async ({ cardId, signal }: { cardId: string; signal?: AbortSignal }, { rejectWithValue }) => {
+  async ({ cardId, signal }: any, { rejectWithValue }) => {
     try {
-      const response = await Axios.get(`/profile-management/get-catalog-page/${cardId}`, {
-        signal,
-      });
+      const response = await Axios.get(
+        `/profile-management/get-catalog-page/${cardId}`,
+        { signal }
+      );
       return response.data;
     } catch (error: any) {
       if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
         return rejectWithValue('İstek iptal edildi');
       }
-
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
@@ -35,19 +22,18 @@ export const getMarketingAssetsData = createAsyncThunk(
 
 export const getOtherMarketingAssetsData = createAsyncThunk(
   'other-profile-management/get-catalog-page',
-  async ({ cardId, signal }: { cardId: string; signal?: AbortSignal }, { rejectWithValue }) => {
+  async ({ cardId, signal }: any, { rejectWithValue }) => {
     try {
-      const response = await Axios.get(`/other-profile-management/get-catalog-page/${cardId}`, {
-        signal,
-      });
+      const response = await Axios.get(
+        `/other-profile-management/get-catalog-page/${cardId}`,
+        { signal }
+      );
       return response.data;
     } catch (error: any) {
       if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
         return rejectWithValue('İstek iptal edildi');
       }
-
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
@@ -55,7 +41,7 @@ export const getOtherMarketingAssetsData = createAsyncThunk(
 
 export const deleteMarketingAssetsData = createAsyncThunk(
   'catalogs/delete',
-  async ({ catalogId }: { catalogId: string }, { rejectWithValue }) => {
+  async ({ catalogId }: any, { rejectWithValue }) => {
     try {
       const response = await Axios.delete(`/catalogs/${catalogId}`);
       return response.data;
@@ -64,6 +50,14 @@ export const deleteMarketingAssetsData = createAsyncThunk(
     }
   }
 );
+
+interface MarketingAssetsState {
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  message: string;
+  data: any;
+}
 
 const initialState: MarketingAssetsState = {
   isLoading: false,

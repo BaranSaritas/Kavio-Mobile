@@ -1,36 +1,20 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import Axios from '../../api/axiosInstance';
-
-interface SocialMediaData {
-  [key: string]: any;
-}
-
-interface SocialMediaState {
-  isLoading: boolean;
-  loadingCount: number;
-  isSuccess: boolean;
-  isError: boolean;
-  message: string;
-  data: SocialMediaData | null;
-  socialMediaPlatforms: any[] | null;
-  addedSocialMediaPlatforms: any[];
-}
 
 export const getSocialMediaData = createAsyncThunk(
   'profile-management/get-social-medias',
-  async ({ cardId, signal }: { cardId: string; signal?: AbortSignal }, { rejectWithValue }) => {
+  async ({ cardId, signal }: any, { rejectWithValue }) => {
     try {
-      const response = await Axios.get(`/profile-management/get-social-medias/${cardId}`, {
-        signal,
-      });
+      const response = await Axios.get(
+        `/profile-management/get-social-medias/${cardId}`,
+        { signal }
+      );
       return response.data;
     } catch (error: any) {
       if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
         return rejectWithValue('İstek iptal edildi');
       }
-
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
@@ -38,19 +22,18 @@ export const getSocialMediaData = createAsyncThunk(
 
 export const getOtherSocialMediaData = createAsyncThunk(
   'other-profile-management/get-social-medias',
-  async ({ cardId, signal }: { cardId: string; signal?: AbortSignal }, { rejectWithValue }) => {
+  async ({ cardId, signal }: any, { rejectWithValue }) => {
     try {
-      const response = await Axios.get(`/other-profile-management/get-social-medias/${cardId}`, {
-        signal,
-      });
+      const response = await Axios.get(
+        `/other-profile-management/get-social-medias/${cardId}`,
+        { signal }
+      );
       return response.data;
     } catch (error: any) {
       if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
         return rejectWithValue('İstek iptal edildi');
       }
-
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
@@ -58,19 +41,18 @@ export const getOtherSocialMediaData = createAsyncThunk(
 
 export const getSocialMediaPlatformsData = createAsyncThunk(
   'social-media-platforms/social-media-platforms',
-  async ({ signal }: { signal?: AbortSignal }, { rejectWithValue }) => {
+  async ({ signal }: any, { rejectWithValue }) => {
     try {
-      const response = await Axios.get(`/social-media-platforms/social-media-platforms`, {
-        signal,
-      });
+      const response = await Axios.get(
+        `/social-media-platforms/social-media-platforms`,
+        { signal }
+      );
       return response.data;
     } catch (error: any) {
       if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError') {
         return rejectWithValue('İstek iptal edildi');
       }
-
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
@@ -78,7 +60,7 @@ export const getSocialMediaPlatformsData = createAsyncThunk(
 
 export const updateSocialMedia = createAsyncThunk(
   'social-media-platforms/bulk-update',
-  async ({ cardId, updatedData }: { cardId: string; updatedData: any }, { rejectWithValue }) => {
+  async ({ cardId, updatedData }: any, { rejectWithValue }) => {
     try {
       const response = await Axios.post(
         `/social-media-platforms/bulk-update/${cardId}`,
@@ -87,11 +69,21 @@ export const updateSocialMedia = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       if (!error.response) throw error;
-
       return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
     }
   }
 );
+
+interface SocialMediaState {
+  isLoading: boolean;
+  loadingCount: number;
+  isSuccess: boolean;
+  isError: boolean;
+  message: string;
+  data: any;
+  socialMediaPlatforms: any;
+  addedSocialMediaPlatforms: any[];
+}
 
 const initialState: SocialMediaState = {
   isLoading: false,
@@ -108,10 +100,10 @@ const SocialMediaSlice = createSlice({
   name: 'socialMedia',
   initialState,
   reducers: {
-    setAddedSocialMediaPlatforms(state, action: PayloadAction<any[]>) {
+    setAddedSocialMediaPlatforms(state, action) {
       state.addedSocialMediaPlatforms = action.payload;
     },
-    setUpdateSocialMedia(state, action: PayloadAction<SocialMediaData>) {
+    setUpdateSocialMedia(state, action) {
       state.data = action.payload;
     },
     resetSocialMedia(state) {
@@ -187,11 +179,13 @@ const SocialMediaSlice = createSlice({
         state.isSuccess = false;
         state.isError = true;
         state.message = (action.payload as string) || 'Beklenmeyen Bir Hata Oluştu';
-        state.data = null;
       });
   },
 });
 
-export const { setAddedSocialMediaPlatforms, setUpdateSocialMedia, resetSocialMedia } =
-  SocialMediaSlice.actions;
+export const {
+  setAddedSocialMediaPlatforms,
+  setUpdateSocialMedia,
+  resetSocialMedia,
+} = SocialMediaSlice.actions;
 export default SocialMediaSlice.reducer;
