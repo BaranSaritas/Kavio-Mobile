@@ -1,0 +1,65 @@
+{
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "forgotPasswordText": "Forgot Password",
+      "submitText": "Sign In",
+      "noAccountText": "Don't have an account?",
+      "registerLink": "Sign Up",
+      "validation": {
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordRequired": "Password is required",
+        "passwordMin": "Password must be at least 6 characters"
+      }
+    },
+    "register": {
+      "title": "Create Account",
+      "nameLabel": "First Name",
+      "namePlaceholder": "Your first name",
+      "surnameLabel": "Last Name",
+      "surnamePlaceholder": "Your last name",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "submitText": "Sign Up",
+      "hasAccountText": "Already have an account?",
+      "loginLink": "Sign In",
+      "successMessage": "Registration successful! Redirecting to login...",
+      "validation": {
+        "nameRequired": "First name is required",
+        "nameMin": "First name must be at least 2 characters",
+        "surnameRequired": "Last name is required",
+        "surnameMin": "Last name must be at least 2 characters",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordRequired": "Password is required",
+        "passwordMin": "Password must be at least 6 characters"
+      }
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "personalInfo": "Personal Information",
+    "contactInfo": "Contact Information",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "socialMedia": {
+    "title": "Social Media",
+    "addPlatform": "Add Platform",
+    "noPlatforms": "No social media accounts added yet"
+  },
+  "company": {
+    "title": "Company Information"
+  },
+  "marketingAssets": {
+    "title": "Marketing Assets"
+  },
+  "analize": {
+    "title": "Analytics"
+  }
+}

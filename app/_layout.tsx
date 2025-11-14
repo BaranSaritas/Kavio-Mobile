@@ -1,28 +1,25 @@
-import { Tabs } from "expo-router";
-import { House } from "lucide-react-native";
+import { Slot } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import Toast from "react-native-toast-message";
+import { Provider } from "react-redux";
+import { hydrateAuth } from "../redux/slices/UserSlice";
+import store from "../redux/store";
 
-export default function TabLayout() {
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
+
+  useEffect(() => {
+    store.dispatch(hydrateAuth()).finally(() => {
+      SplashScreen.hideAsync();
+    });
+  }, []);
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: "#fff",
-        tabBarInactiveTintColor: "#888",
-        tabBarStyle: {
-          backgroundColor: "#101417",
-          borderTopColor: "#222",
-          paddingTop: 6,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Ana Sayfa",
-          tabBarIcon: ({ color }) => <House color={color} size={22} />,
-        }}
-      />
-
-    </Tabs>
+    <Provider store={store}>
+      <Slot /> 
+      <Toast />
+    </Provider>
   );
 }
