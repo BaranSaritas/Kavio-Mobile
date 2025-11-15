@@ -1,18 +1,16 @@
 import {
+  Check,
+  Edit,
+  ExternalLink,
   Facebook,
   Github,
   Instagram,
   Linkedin,
   Plus,
-  Save,
+  Trash2,
   Twitter,
   X,
   Youtube,
-  Music2,
-  MapPin,
-  Camera,
-  Palette,
-  Disc3,
 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
@@ -32,19 +30,15 @@ import ProfileHeader from '../../components/layout/ProfileHeader';
 import {
   getSocialMediaData,
   getSocialMediaPlatformsData,
-  resetSocialMedia,
-  setAddedSocialMediaPlatforms,
-  setUpdateSocialMedia,
-  updateSocialMedia,
+  updateSocialMedia
 } from '../../redux/slices/SocialMediaSlice';
-import { setUpdatedPage } from '../../redux/slices/UpdatePageSlice';
 import { getUserImages } from '../../redux/slices/UserImagesSlice';
 import { AppDispatch, RootState } from '../../redux/store';
 import { updatePageChecker } from '../../utils/helpers';
 
 const CURRENT_PAGE = '/(tabs)/social-media';
 
-const getSocialIcon = (platform: string, size: number = 32) => {
+const getSocialIcon = (platform: string, size = 32) => {
   const iconProps = { size, color: '#fff' };
   const platformLower = platform.toLowerCase();
   
@@ -62,32 +56,26 @@ const getSocialIcon = (platform: string, size: number = 32) => {
       return <Youtube {...iconProps} />;
     case 'github':
       return <Github {...iconProps} />;
-    case 'spotify':
-      return <Music2 {...iconProps} />;
-    case 'pinterest':
-      return <MapPin {...iconProps} />;
-    case 'snapchat':
-      return <Camera {...iconProps} />;
-    case 'behance':
-      return <Palette {...iconProps} />;
-    case 'dribbble':
-      return <Disc3 {...iconProps} />;
     default:
       return <Instagram {...iconProps} />;
   }
 };
 
 export default function SocialMediaScreen() {
-const dispatch = useDispatch<AppDispatch>();
-  const { data, socialMediaPlatforms, isLoading, addedSocialMediaPlatforms } = useSelector(
+  const dispatch = useDispatch<AppDispatch>();
+  const { data, socialMediaPlatforms, isLoading } = useSelector(
     (state: RootState) => state.socialMedia
   );
   const { updatedPage } = useSelector((state: RootState) => state.updatePage);
   const { user } = useSelector((state: RootState) => state.user);
+
   const [showModal, setShowModal] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<any>(null);
-  const [linkValue, setLinkValue] = useState('');
-  const [editingItem, setEditingItem] = useState<any>(null); // Hangi item edit ediliyor
+  const [platformLinks, setPlatformLinks] = useState<any[]>([]);
+  const [editingLink, setEditingLink] = useState<any>(null);
+  const [editValue, setEditValue] = useState('');
+  const [addingNew, setAddingNew] = useState(false);
+  const [newLink, setNewLink] = useState('');
 
   const cardId = user?.cardId;
   const isUpdated = updatePageChecker(CURRENT_PAGE, updatedPage);
@@ -100,129 +88,127 @@ const dispatch = useDispatch<AppDispatch>();
     }
   }, [cardId, dispatch]);
 
+  // Update platformLinks when data changes and modal is open
   useEffect(() => {
-    return () => {
-      dispatch(resetSocialMedia());
-    };
-  }, [dispatch]);
-
-  const filteredPlatforms = socialMediaPlatforms?.filter((platform: any) =>
-    data?.some((d: any) => d.platform === platform.name)
-  );
-
-  const availablePlatforms = socialMediaPlatforms?.filter((item: any) =>
-    !data?.some((d: any) => d.platform === item.name)
-  );
-
-  const handleSocialMediaPress = (item: any) => {
-    if (isUpdated) {
-      // Edit modda - link düzenle
-      const socialMediaItem = data?.find((d: any) => d.platform === item.name);
-      setSelectedPlatform(item);
-      setLinkValue(socialMediaItem?.usernameOrUrl || '');
-      setShowModal(true);
-    } else {
-      // Normal modda - link aç
-      const socialMediaItem = data?.find((d: any) => d.platform === item.name);
-      if (socialMediaItem?.usernameOrUrl) {
-        // URL formatını kontrol et
-        let url = socialMediaItem.usernameOrUrl;
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-          url = 'https://' + url;
-        }
-        Linking.openURL(url);
-      } else {
-        Toast.show({
-          type: 'info',
-          text1: 'Link bulunamadı',
-        });
-      }
+    if (showModal && selectedPlatform && data) {
+      const updatedLinks = data.filter((d: any) => d.platform === selectedPlatform.name);
+      setPlatformLinks(updatedLinks);
     }
-  };
+  }, [data, showModal, selectedPlatform]);
 
-  const handleAddPlatform = (platform: any) => {
-    // Aynı platformdan birden fazla eklenebilir, kontrol kaldırıldı
+  // Group platforms by name
+  const groupedPlatforms = socialMediaPlatforms?.reduce((acc: any, platform: any) => {
+    const platformData = data?.filter((d: any) => d.platform === platform.name);
+    if (platformData && platformData.length > 0) {
+      acc.push({
+        ...platform,
+        links: platformData,
+      });
+    }
+    return acc;
+  }, []);
+
+  const availablePlatforms = socialMediaPlatforms?.filter((platform: any) =>
+    !data?.some((d: any) => d.platform === platform.name)
+  );
+
+  const handlePlatformPress = (platform: any) => {
     setSelectedPlatform(platform);
-    setLinkValue('');
-    setEditingItem(null); // Yeni ekleme için null
+    setPlatformLinks(platform.links || []);
     setShowModal(true);
+    setAddingNew(false);
+    setEditingLink(null);
   };
 
-  const handleDeleteLink = () => {
-    if (editingItem && editingItem.id) {
-      // Mevcut item'i sil
-      const updatedData = data.filter((d: any) => d.id !== editingItem.id);
-      dispatch(setUpdateSocialMedia(updatedData));
-    }
-
-    setShowModal(false);
-    setSelectedPlatform(null);
-    setLinkValue('');
-    setEditingItem(null);
-  };
-
-  const handleSaveLink = () => {
-    if (!linkValue.trim()) {
+  const handleAddNew = () => {
+    if (platformLinks.length >= 3) {
       Toast.show({
         type: 'error',
-        text1: 'Link boş olamaz',
+        text1: 'En fazla 3 hesap eklenebilir',
       });
       return;
     }
+    setAddingNew(true);
+    setNewLink('');
+  };
 
-    if (editingItem && editingItem.id) {
-      // Mevcut item'ı güncelle
-      const updatedData = data.map((d: any) =>
-        d.id === editingItem.id ? { ...d, usernameOrUrl: linkValue } : d
-      );
-      dispatch(setUpdateSocialMedia(updatedData));
-    } else {
-      // Aynı URL kontrolu
-      const existingItem = data?.find(
-        (d: any) => d.platform === selectedPlatform.name && d.usernameOrUrl === linkValue
-      );
+  const handleSaveNew = async () => {
+    if (!newLink.trim()) {
+      Toast.show({ type: 'error', text1: 'Link boş olamaz' });
+      return;
+    }
 
-      if (existingItem) {
-        Toast.show({
-          type: 'info',
-          text1: 'Bu hesap zaten ekli',
-        });
-        return;
-      }
-
-      // Yeni ekle
-      const newItem = {
+    const newData = [
+      ...data,
+      {
         platform: selectedPlatform.name,
-        usernameOrUrl: linkValue,
-      };
-      dispatch(setAddedSocialMediaPlatforms([...addedSocialMediaPlatforms, newItem]));
-    }
+        usernameOrUrl: newLink,
+        cardId,
+      },
+    ];
 
-    setShowModal(false);
-    setSelectedPlatform(null);
-    setLinkValue('');
-    setEditingItem(null);
-  };
-
-  const handleSave = async () => {
-    const mergedData = [...(data || []), ...addedSocialMediaPlatforms];
-    const res = await dispatch(updateSocialMedia({ cardId, updatedData: mergedData }));
+    const res = await dispatch(updateSocialMedia({ cardId, updatedData: newData }));
     if (res?.meta?.requestStatus === 'fulfilled') {
-      dispatch(getSocialMediaData({ cardId }));
-      dispatch(getSocialMediaPlatformsData({}));
-      dispatch(setUpdatedPage(null));
-      dispatch(setAddedSocialMediaPlatforms([]));
-      Toast.show({
-        type: 'success',
-        text1: 'Kaydedildi',
-      });
+      await dispatch(getSocialMediaData({ cardId }));
+      await dispatch(getSocialMediaPlatformsData({}));
+      setNewLink('');
+      setAddingNew(false);
+      Toast.show({ type: 'success', text1: 'Eklendi' });
+      // ✅ Modal açık kalsın, state güncellendi
     }
   };
 
-  const handleCancel = () => {
-    dispatch(getSocialMediaData({ cardId }));
-    dispatch(setUpdatedPage(null));
-    dispatch(setAddedSocialMediaPlatforms([]));
+  const handleEdit = (link: any) => {
+    setEditingLink(link);
+    setEditValue(link.usernameOrUrl);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editValue.trim()) {
+      Toast.show({ type: 'error', text1: 'Link boş olamaz' });
+      return;
+    }
+
+    const newData = data.map((item: any) =>
+      item.id === editingLink.id ? { ...item, usernameOrUrl: editValue } : item
+    );
+
+    const res = await dispatch(updateSocialMedia({ cardId, updatedData: newData }));
+    if (res?.meta?.requestStatus === 'fulfilled') {
+      await dispatch(getSocialMediaData({ cardId }));
+      await dispatch(getSocialMediaPlatformsData({}));
+      setEditingLink(null);
+      setEditValue('');
+      Toast.show({ type: 'success', text1: 'Güncellendi' });
+      // ✅ Modal açık kalsın, state güncellendi
+    }
+  };
+
+  const handleDelete = async (linkId: number) => {
+    const newData = data.filter((item: any) => item.id !== linkId);
+    const res = await dispatch(updateSocialMedia({ cardId, updatedData: newData }));
+    if (res?.meta?.requestStatus === 'fulfilled') {
+      await dispatch(getSocialMediaData({ cardId }));
+      await dispatch(getSocialMediaPlatformsData({}));
+      
+      // If no more links for this platform, close modal
+      const remainingLinks = newData.filter((item: any) => item.platform === selectedPlatform.name);
+      if (remainingLinks.length === 0) {
+        setShowModal(false);
+        setSelectedPlatform(null);
+      }
+      // ✅ Else modal açık kalsın, state güncellendi
+      
+      Toast.show({ type: 'success', text1: 'Silindi' });
+    }
+  };
+
+  const handleAddPlatform = async (platform: any) => {
+    setSelectedPlatform(platform);
+    setPlatformLinks([]);
+    setAddingNew(true);
+    setNewLink('');
+    setShowModal(true);
   };
 
   if (isLoading) {
@@ -241,131 +227,184 @@ const dispatch = useDispatch<AppDispatch>();
         <View style={styles.content}>
           <Text style={styles.sectionTitle}>Sosyal Medya</Text>
           
-          {/* Tüm Platformlar - Ekle */}
-          {isUpdated && socialMediaPlatforms && socialMediaPlatforms.length > 0 && (
-            <View style={styles.availablePlatformsContainer}>
-              <Text style={styles.availablePlatformsTitle}>Platform Seç:</Text>
-              <View style={styles.availablePlatformsGrid}>
-                {socialMediaPlatforms.map((platform: any, idx: number) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.availablePlatformButton}
-                    onPress={() => handleAddPlatform(platform)}
-                  >
-                    <View style={styles.smallIconCircle}>
-                      {getSocialIcon(platform.name, 24)}
-                    </View>
-                    <Text style={styles.availablePlatformText}>{platform.displayName}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+          {/* Available Platforms to Add */}
+          {isUpdated && availablePlatforms && availablePlatforms.length > 0 && (
+            <View style={styles.addSection}>
+              <Text style={styles.addTitle}>Platform Ekle</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.addGrid}>
+                  {availablePlatforms.map((platform: any, idx: number) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={styles.addButton}
+                      onPress={() => handleAddPlatform(platform)}
+                    >
+                      <Plus size={20} color="#7196AC" />
+                      <Text style={styles.addButtonText}>{platform.displayName}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
             </View>
           )}
-
-          {/* Mevcut Sosyal Medya Hesapları */}
+          
+          {/* Existing Platforms */}
           <View style={styles.grid}>
-            {data && data.length > 0 ? (
-              data.map((item: any, idx: number) => {
-                const platformInfo = socialMediaPlatforms?.find(
-                  (p: any) => p.name === item.platform
-                );
-                return (
+            {groupedPlatforms && groupedPlatforms.length > 0 ? (
+              groupedPlatforms.map((platform: any, idx: number) => (
+                <View key={idx} style={styles.iconWrapper}>
                   <TouchableOpacity
-                    key={idx}
                     style={styles.iconButton}
-                    onPress={() => {
-                      if (isUpdated) {
-                        setSelectedPlatform(platformInfo);
-                        setLinkValue(item?.usernameOrUrl || '');
-                        setEditingItem(item); // Edit edilen item'i sakla
-                        setShowModal(true);
-                      } else {
-                        if (item?.usernameOrUrl) {
-                          let url = item.usernameOrUrl;
-                          if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                            url = 'https://' + url;
-                          }
-                          Linking.openURL(url);
-                        }
-                      }
-                    }}
+                    onPress={() => handlePlatformPress(platform)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.iconCircle}>
-                      {getSocialIcon(item.platform)}
+                      {getSocialIcon(platform.name)}
+                      {isUpdated && (
+                        <View style={styles.editBadge}>
+                          <Edit size={16} color="#fff" />
+                        </View>
+                      )}
                     </View>
-                    {isUpdated && (
-                      <View style={styles.editBadge}>
-                        <Text style={styles.editBadgeText}>✏️</Text>
-                      </View>
-                    )}
                   </TouchableOpacity>
-                );
-              })
+                  {platform.links.length > 1 && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{platform.links.length}</Text>
+                    </View>
+                  )}
+                </View>
+              ))
             ) : (
               <Text style={styles.noDataText}>Sosyal medya hesabı bulunamadı</Text>
             )}
           </View>
-
-          {/* Save/Cancel Buttons */}
-          {isUpdated && (
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Save size={20} color="#fff" />
-                <Text style={styles.saveButtonText}>Kaydet</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-                <X size={20} color="#fff" />
-                <Text style={styles.cancelButtonText}>İptal</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </ScrollView>
 
-      {/* Edit Modal */}
-      <Modal
-        visible={showModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowModal(false)}
-      >
+      {/* Platform Links Modal */}
+      <Modal visible={showModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            {/* Header */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {selectedPlatform?.displayName} Linki
-              </Text>
-              <TouchableOpacity onPress={() => setShowModal(false)}>
+              <View style={styles.modalPlatform}>
+                {selectedPlatform && getSocialIcon(selectedPlatform.name, 28)}
+                <Text style={styles.modalTitle}>{selectedPlatform?.displayName}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowModal(false);
+                  setSelectedPlatform(null);
+                  setAddingNew(false);
+                  setEditingLink(null);
+                  setNewLink('');
+                  setEditValue('');
+                }}
+              >
                 <X size={24} color="#fff" />
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              style={styles.modalInput}
-              value={linkValue}
-              onChangeText={setLinkValue}
-              placeholder="https://..."
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalSaveButton} onPress={handleSaveLink}>
-                <Save size={18} color="#fff" />
-                <Text style={styles.modalSaveButtonText}>
-                  {editingItem ? 'G\u00fcncelle' : 'Ekle'}
-                </Text>
+            {/* Add Button (Edit Mode) */}
+            {isUpdated && !addingNew && platformLinks.length < 3 && (
+              <TouchableOpacity style={styles.addNewBtn} onPress={handleAddNew}>
+                <Plus size={20} color="#7196AC" />
+                <Text style={styles.addNewText}>Yeni Hesap Ekle</Text>
               </TouchableOpacity>
+            )}
 
-              {editingItem && editingItem.id && (
-                <TouchableOpacity style={styles.modalDeleteButton} onPress={handleDeleteLink}>
-                  <X size={18} color="#fff" />
-                  <Text style={styles.modalDeleteButtonText}>Sil</Text>
+            {/* Adding New */}
+            {addingNew && (
+              <View style={styles.linkItem}>
+                <TextInput
+                  style={styles.linkInput}
+                  value={newLink}
+                  onChangeText={setNewLink}
+                  placeholder="https://..."
+                  placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  autoFocus
+                />
+                <TouchableOpacity style={styles.iconBtn} onPress={handleSaveNew}>
+                  <Check size={20} color="#70C094" />
                 </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.iconBtn}
+                  onPress={() => {
+                    setAddingNew(false);
+                    setNewLink('');
+                  }}
+                >
+                  <X size={20} color="#ff6b6b" />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Links List */}
+            <ScrollView style={styles.linksList}>
+              {platformLinks && platformLinks.length > 0 ? (
+                platformLinks.map((link: any, idx: number) => (
+                  <View key={link.id || idx} style={styles.linkItem}>
+                    {editingLink?.id === link.id ? (
+                      <>
+                        <TextInput
+                          style={styles.linkInput}
+                          value={editValue}
+                          onChangeText={setEditValue}
+                          autoCapitalize="none"
+                          autoFocus
+                        />
+                        <TouchableOpacity style={styles.iconBtn} onPress={handleSaveEdit}>
+                          <Check size={20} color="#70C094" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.iconBtn}
+                          onPress={() => {
+                            setEditingLink(null);
+                            setEditValue('');
+                          }}
+                        >
+                          <X size={20} color="#ff6b6b" />
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          style={styles.linkTextWrapper}
+                          onPress={() => !isUpdated && Linking.openURL(link.usernameOrUrl)}
+                          disabled={isUpdated}
+                        >
+                          <Text style={styles.linkText} numberOfLines={1}>
+                            {link.usernameOrUrl}
+                          </Text>
+                          {!isUpdated && <ExternalLink size={16} color="#7196AC" />}
+                        </TouchableOpacity>
+                        {isUpdated && (
+                          <>
+                            <TouchableOpacity
+                              style={styles.iconBtn}
+                              onPress={() => handleEdit(link)}
+                            >
+                              <Edit size={20} color="#7196AC" />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.iconBtn}
+                              onPress={() => handleDelete(link.id)}
+                            >
+                              <Trash2 size={20} color="#ff6b6b" />
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </View>
+                ))
+              ) : (
+                !addingNew && (
+                  <Text style={styles.noLinksText}>Link bulunamadı</Text>
+                )
               )}
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -374,196 +413,37 @@ const dispatch = useDispatch<AppDispatch>();
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#141e22',
-  },
-  centerContainer: {
-    flex: 1,
-    backgroundColor: '#141e22',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  availablePlatformsContainer: {
-    marginBottom: 20,
-    backgroundColor: '#10181B',
-    borderRadius: 12,
-    padding: 16,
-  },
-  availablePlatformsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#7196AC',
-    marginBottom: 12,
-  },
-  availablePlatformsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  availablePlatformButton: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  smallIconCircle: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#1B272C',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  availablePlatformText: {
-    fontSize: 11,
-    color: '#8E8E8E',
-    maxWidth: 50,
-    textAlign: 'center',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15,
-  },
-  iconButton: {
-    width: '30%',
-    aspectRatio: 1,
-  },
-  iconCircle: {
-    flex: 1,
-    backgroundColor: '#1B272C',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  editBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#3C616D',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  editBadgeText: {
-    fontSize: 12,
-  },
-  noDataText: {
-    fontSize: 16,
-    color: '#8E8E8E',
-    textAlign: 'center',
-    width: '100%',
-    marginTop: 40,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 30,
-  },
-  saveButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#70C094',
-    paddingVertical: 15,
-    borderRadius: 8,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  cancelButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#ff6b6b',
-    paddingVertical: 15,
-    borderRadius: 8,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#1B272C',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  modalInput: {
-    backgroundColor: '#273034',
-    borderRadius: 8,
-    padding: 15,
-    color: '#fff',
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  modalSaveButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#3C616D',
-    paddingVertical: 15,
-    borderRadius: 8,
-  },
-  modalSaveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  modalDeleteButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#ff6b6b',
-    paddingVertical: 15,
-    borderRadius: 8,
-  },
-  modalDeleteButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#141e22' },
+  centerContainer: { flex: 1, backgroundColor: '#141e22', justifyContent: 'center', alignItems: 'center' },
+  content: { paddingHorizontal: 20, paddingBottom: 100 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 16 },
+  addSection: { marginBottom: 20 },
+  addTitle: { fontSize: 14, fontWeight: '600', color: '#8E8E8E', marginBottom: 10 },
+  addGrid: { flexDirection: 'row', gap: 10 },
+  addButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10181B', paddingVertical: 10, paddingHorizontal: 15, borderRadius: 8 },
+  addButtonText: { fontSize: 14, fontWeight: '600', color: '#7196AC' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 15 },
+  iconWrapper: { width: '30%', position: 'relative' },
+  iconButton: { aspectRatio: 1 },
+  iconCircle: { flex: 1, backgroundColor: '#1B272C', borderRadius: 16, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  editBadge: { position: 'absolute', top: 5, right: 5, backgroundColor: '#3C616D', padding: 4, borderRadius: 12 },
+  badge: { position: 'absolute', top: -5, right: -5, backgroundColor: '#70C094', width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  badgeText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  noDataText: { fontSize: 16, color: '#8E8E8E', textAlign: 'center', width: '100%', marginTop: 40 },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#1B272C', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalPlatform: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  addNewBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#273034', paddingVertical: 12, borderRadius: 8, marginBottom: 15 },
+  addNewText: { fontSize: 14, fontWeight: '600', color: '#7196AC' },
+  linksList: { maxHeight: 400 },
+  linkItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#273034', padding: 12, borderRadius: 8, marginBottom: 10 },
+  linkTextWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  linkText: { fontSize: 15, color: '#fff', flex: 1 },
+  linkInput: { flex: 1, backgroundColor: '#1B272C', color: '#fff', fontSize: 15, padding: 12, borderRadius: 8 },
+  iconBtn: { padding: 4 },
+  noLinksText: { fontSize: 15, color: '#8E8E8E', textAlign: 'center', marginTop: 20 },
 });
