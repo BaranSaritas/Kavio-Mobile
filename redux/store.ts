@@ -7,6 +7,8 @@ import companyReducer from './slices/CompanySlice';
 import socialMediaReducer from './slices/SocialMediaSlice';
 import marketingAssetsReducer from './slices/MarketingAssetsSlice';
 import userImagesReducer from './slices/UserImagesSlice';
+import contactsReducer from './slices/ContactsSlice';
+import connectionsReducer from './slices/ConnectionsSlice';
 
 const store = configureStore({
   reducer: {
@@ -18,6 +20,8 @@ const store = configureStore({
     socialMedia: socialMediaReducer,
     marketingAssets: marketingAssetsReducer,
     userImages: userImagesReducer,
+    contacts: contactsReducer,
+    connections: connectionsReducer,
   },
 });
 

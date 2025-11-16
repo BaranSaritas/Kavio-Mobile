@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
-import { Edit, QrCode, Menu, Bell, Bookmark, Users, Palette, Settings, LogOut, X } from 'lucide-react-native';
-import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'expo-router';
-import { RootState } from '../../redux/store';
+import { Bell, Bookmark, ChevronDown, ChevronRight, Edit, LogOut, Menu, MessageCircle, Palette, QrCode, Settings, UserCheck, Users, X } from 'lucide-react-native';
+import { useState } from 'react';
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { setUpdatedPage } from '../../redux/slices/UpdatePageSlice';
-import { updatePageChecker } from '../../utils/helpers';
 import { logout } from '../../redux/slices/UserSlice';
+import { RootState } from '../../redux/store';
+import { updatePageChecker } from '../../utils/helpers';
 
 interface ProfileHeaderProps {
   currentPage: string;
@@ -20,6 +20,7 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
   const { updatedPage } = useSelector((state: RootState) => state.updatePage);
 
   const [showMenu, setShowMenu] = useState(false);
+  const [visitorsExpanded, setVisitorsExpanded] = useState(false);
 
   const isUpdated = updatePageChecker(currentPage, updatedPage);
 
@@ -40,7 +41,15 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
   const menuItems = [
     { icon: Bell, label: 'Notice', route: '/notifications' },
     { icon: Bookmark, label: 'Saves', route: '/saves' },
-    { icon: Users, label: 'Visitors', route: '/visitors' },
+    {
+      icon: Users,
+      label: 'Visitors',
+      expandable: true,
+      children: [
+        { icon: MessageCircle, label: 'Contacts', route: '/visitors/contacts' },
+        { icon: UserCheck, label: 'Connections', route: '/visitors/connections' },
+      ]
+    },
     { icon: Palette, label: 'Themes', route: '/themes' },
     { icon: Settings, label: 'Settings', route: '/settings' },
   ];
@@ -134,17 +143,53 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
             {/* Menu Items */}
             <ScrollView style={styles.modalMenu}>
               {menuItems.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.modalMenuItem}
-                  onPress={() => {
-                    setShowMenu(false);
-                    router.push(item.route as any);
-                  }}
-                >
-                  <item.icon size={20} color="#fff" />
-                  <Text style={styles.modalMenuLabel}>{item.label}</Text>
-                </TouchableOpacity>
+                <View key={index}>
+                  <TouchableOpacity
+                    style={styles.modalMenuItem}
+                    onPress={() => {
+                      if (item.expandable) {
+                        setVisitorsExpanded(!visitorsExpanded);
+                      } else if (item.route) {
+                        setShowMenu(false);
+                        router.push(item.route as any);
+                      }
+                    }}
+                  >
+                    <View style={styles.menuItemContent}>
+                      <item.icon size={20} color="#fff" />
+                      <Text style={styles.modalMenuLabel}>{item.label}</Text>
+                    </View>
+                    {item.expandable ? (
+                      visitorsExpanded ? (
+                        <ChevronDown size={20} color="#8E8E8E" />
+                      ) : (
+                        <ChevronRight size={20} color="#8E8E8E" />
+                      )
+                    ) : null}
+                  </TouchableOpacity>
+
+                  {/* Submenu Items */}
+                  {item.expandable && visitorsExpanded && item.children && (
+                    <View style={styles.submenu}>
+                      {item.children.map((subItem, subIndex) => (
+                        <TouchableOpacity
+                          key={subIndex}
+                          style={styles.submenuItem}
+                          onPress={() => {
+                            setShowMenu(false);
+                            router.push(subItem.route as any);
+                          }}
+                        >
+                          <View style={styles.submenuContent}>
+                            <subItem.icon size={18} color="#D4D4D4" />
+                            <Text style={styles.submenuLabel}>{subItem.label}</Text>
+                          </View>
+                          <ChevronRight size={18} color="#8E8E8E" />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
               ))}
             </ScrollView>
 
@@ -189,8 +234,13 @@ const styles = StyleSheet.create({
   modalName: { fontSize: 16, fontWeight: '700', color: '#fff' },
   modalBio: { fontSize: 14, color: '#D4D4D4', marginTop: 2 },
   modalMenu: { flex: 1 },
-  modalMenuItem: { flexDirection: 'row', alignItems: 'center', gap: 15, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
+  modalMenuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
+  menuItemContent: { flexDirection: 'row', alignItems: 'center', gap: 15 },
   modalMenuLabel: { fontSize: 16, fontWeight: '500', color: '#fff' },
+  submenu: { backgroundColor: 'rgba(0,0,0,0.2)', paddingLeft: 20 },
+  submenuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  submenuContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  submenuLabel: { fontSize: 15, fontWeight: '500', color: '#D4D4D4' },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#CD6060', paddingVertical: 15, borderRadius: 10, marginBottom: 30 },
   logoutText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 });

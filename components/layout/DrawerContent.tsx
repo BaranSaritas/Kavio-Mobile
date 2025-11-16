@@ -1,16 +1,15 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
-import { Drawer } from 'expo-router/drawer';
-import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
 import {
   Bell,
   Bookmark,
-  Users,
+  ChevronRight,
+  LogOut,
   Palette,
   Settings,
-  LogOut,
-  ChevronRight,
+  Users,
 } from 'lucide-react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/UserSlice';
 import { RootState } from '../../redux/store';
 
@@ -28,7 +27,7 @@ export default function DrawerContent() {
   const menuItems = [
     { icon: Bell, label: 'Notice', route: '/notifications' },
     { icon: Bookmark, label: 'Saves', route: '/saves' },
-    { icon: Users, label: 'Visitors', route: '/visitors' },
+    { icon: Users, label: 'Visitors', route: '/visitors/contacts' },
     { icon: Palette, label: 'Themes', route: '/themes' },
     { icon: Settings, label: 'Settings', route: '/settings' },
   ];

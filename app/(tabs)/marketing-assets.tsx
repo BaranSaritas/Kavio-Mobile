@@ -80,9 +80,6 @@ export default function MarketingAssetsScreen() {
     }
   }, [cardId, dispatch]);
 
-  // -------------------------------------------------------------------
-  // 🔥 2. COVER PICKER (PNG/JPG için tamamen doğru)
-  // -------------------------------------------------------------------
   const handlePickCoverPhoto = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -98,9 +95,6 @@ export default function MarketingAssetsScreen() {
     }
   };
 
-  // -------------------------------------------------------------------
-  // 🔥 3. PDF PICKER (PDF için tamamen doğru)
-  // -------------------------------------------------------------------
   const handlePickPDF = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -121,9 +115,7 @@ export default function MarketingAssetsScreen() {
     }
   };
 
-  // -------------------------------------------------------------------
-  // 🔥 4. UPLOAD (MultipartFile için %100 uygun)
-  // -------------------------------------------------------------------
+
   const handleSubmit = async () => {
     if (!catalogName.trim()) {
       Toast.show({ type: "error", text1: "Başlık boş olamaz" });
@@ -179,9 +171,7 @@ export default function MarketingAssetsScreen() {
     }
   };
 
-  // -------------------------------------------------------------------
-  // 🔥 5. DELETE
-  // -------------------------------------------------------------------
+
   const handleDelete = async (catalogId: number) => {
     const res = await dispatch(deleteMarketingAssetsData({ catalogId }));
     if (res?.meta?.requestStatus === "fulfilled") {
@@ -206,9 +196,7 @@ export default function MarketingAssetsScreen() {
     );
   }
 
-  // -------------------------------------------------------------------
-  // 🔥 6. UI (modal + grid + picker)
-  // -------------------------------------------------------------------
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -385,9 +373,7 @@ export default function MarketingAssetsScreen() {
   );
 }
 
-// -------------------------------------------------------------------
-// 🔥 7. STYLES
-// -------------------------------------------------------------------
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#141e22" },
   centerContainer: {
