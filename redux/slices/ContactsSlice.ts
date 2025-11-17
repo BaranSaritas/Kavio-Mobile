@@ -14,6 +14,19 @@ export const getContacts = createAsyncThunk(
   }
 );
 
+export const deleteContact = createAsyncThunk(
+  'contacts/delete',
+  async ({ contactId }: { contactId: number }, { rejectWithValue }) => {
+    try {
+      await Axios.delete(`/guest-contact/${contactId}`);
+      return { contactId };
+    } catch (error: any) {
+      if (!error.response) throw error;
+      return rejectWithValue(error.response.data?.message || 'Bir hata oluştu');
+    }
+  }
+);
+
 interface Contact {
   id: number;
   nameSurname: string;
@@ -37,6 +50,7 @@ interface ContactsState {
   isError: boolean;
   message: string;
   data: Contact[];
+  actionLoading: boolean;
 }
 
 const initialState: ContactsState = {
@@ -45,6 +59,7 @@ const initialState: ContactsState = {
   isError: false,
   message: '',
   data: [],
+  actionLoading: false,
 };
 
 const ContactsSlice = createSlice({
@@ -56,6 +71,7 @@ const ContactsSlice = createSlice({
       state.isSuccess = false;
       state.isError = false;
       state.message = '';
+      state.actionLoading = false;
     },
   },
   extraReducers: (builder) => {
@@ -75,6 +91,22 @@ const ContactsSlice = createSlice({
         state.isError = true;
         state.message = (action.payload as string) || 'Beklenmeyen Bir Hata Oluştu';
         state.data = [];
+      })
+      
+      // Delete Contact
+      .addCase(deleteContact.pending, (state) => {
+        state.actionLoading = true;
+      })
+      .addCase(deleteContact.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        state.isSuccess = true;
+        // Remove contact from state
+        state.data = state.data.filter(c => c.id !== action.payload.contactId);
+      })
+      .addCase(deleteContact.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.isError = true;
+        state.message = (action.payload as string) || 'Silme başarısız';
       });
   },
 });
