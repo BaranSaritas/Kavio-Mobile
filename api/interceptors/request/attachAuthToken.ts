@@ -6,11 +6,16 @@ export default async function attachAuthToken(
   config: InternalAxiosRequestConfig
 ): Promise<InternalAxiosRequestConfig> {
 
-  const token = await AsyncStorage.getItem("accessToken");
-
   if (!config.headers) {
     config.headers = new AxiosHeaders();
   }
+
+  // Other profile management API'leri için token gönderme (public API'ler)
+  if (config.url?.includes('/other-profile-management/')) {
+    return config;
+  }
+
+  const token = await AsyncStorage.getItem("accessToken");
 
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);

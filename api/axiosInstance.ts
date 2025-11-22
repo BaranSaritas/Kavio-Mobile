@@ -1,9 +1,7 @@
 import axios from "axios";
-import Constants from "expo-constants";
 import setupInterceptors from "./setupInterceptors";
 
-const baseURL =
-  Constants.expoConfig?.extra?.apiUrl || "http://localhost:8080/api";
+const baseURL ="http://localhost:8080/api";
 
 const axiosInstance = axios.create({
   baseURL,

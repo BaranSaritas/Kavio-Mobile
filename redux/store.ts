@@ -9,6 +9,7 @@ import marketingAssetsReducer from './slices/MarketingAssetsSlice';
 import userImagesReducer from './slices/UserImagesSlice';
 import contactsReducer from './slices/ContactsSlice';
 import connectionsReducer from './slices/ConnectionsSlice';
+import guestContactReducer from './slices/GuestContactSlice';
 
 const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ const store = configureStore({
     userImages: userImagesReducer,
     contacts: contactsReducer,
     connections: connectionsReducer,
+    guestContact: guestContactReducer,
   },
 });
 

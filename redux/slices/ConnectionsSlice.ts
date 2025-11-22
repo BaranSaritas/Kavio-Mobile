@@ -66,6 +66,40 @@ export const deleteConnection = createAsyncThunk(
   }
 );
 
+export const sendConnectionRequest = createAsyncThunk(
+  'connections/send',
+  async ({ senderCardId, receiverCardId }: { senderCardId: string; receiverCardId: string }, { rejectWithValue }) => {
+    try {
+      const url = `/connections/send?senderCardId=${senderCardId}&receiverCardId=${receiverCardId}`;
+      console.log('[sendConnectionRequest] Making request to:', url);
+      const response = await Axios.post(url);
+      console.log('[sendConnectionRequest] Response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('[sendConnectionRequest] Error:', error);
+      if (!error.response) throw error;
+      return rejectWithValue(error.response.data?.message || 'Bağlantı isteği gönderilemedi');
+    }
+  }
+);
+
+export const checkConnectionStatus = createAsyncThunk(
+  'connections/check-status',
+  async ({ myCardId, otherCardId }: { myCardId: string; otherCardId: string }, { rejectWithValue }) => {
+    try {
+      const url = `/connections/check?code1=${myCardId}&code2=${otherCardId}`;
+      console.log('[checkConnectionStatus] Making request to:', url);
+      const response = await Axios.get(url);
+      console.log('[checkConnectionStatus] Response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('[checkConnectionStatus] Error:', error);
+      if (!error.response) throw error;
+      return rejectWithValue(error.response.data?.message || 'Durum kontrolü başarısız');
+    }
+  }
+);
+
 interface User {
   id: number;
   firstName: string;
@@ -112,6 +146,8 @@ interface ConnectionsState {
   message: string;
   data: Connection[];
   actionLoading: boolean;
+  isConnected: boolean | null;
+  sendRequestLoading: boolean;
 }
 
 const initialState: ConnectionsState = {
@@ -121,6 +157,8 @@ const initialState: ConnectionsState = {
   message: '',
   data: [],
   actionLoading: false,
+  isConnected: null,
+  sendRequestLoading: false,
 };
 
 const ConnectionsSlice = createSlice({
@@ -133,6 +171,7 @@ const ConnectionsSlice = createSlice({
       state.isError = false;
       state.message = '';
       state.actionLoading = false;
+      state.sendRequestLoading = false;
     },
   },
   extraReducers: (builder) => {
@@ -222,6 +261,37 @@ const ConnectionsSlice = createSlice({
         state.actionLoading = false;
         state.isError = true;
         state.message = (action.payload as string) || 'Silme başarısız';
+      })
+      
+      // Send Connection Request
+      .addCase(sendConnectionRequest.pending, (state) => {
+        state.sendRequestLoading = true;
+        state.isError = false;
+      })
+      .addCase(sendConnectionRequest.fulfilled, (state) => {
+        state.sendRequestLoading = false;
+        state.isSuccess = true;
+        state.message = 'Bağlantı isteği gönderildi';
+      })
+      .addCase(sendConnectionRequest.rejected, (state, action) => {
+        state.sendRequestLoading = false;
+        state.isError = true;
+        state.message = (action.payload as string) || 'İstek gönderilemedi';
+      })
+      
+      // Check Connection Status
+      .addCase(checkConnectionStatus.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(checkConnectionStatus.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isConnected = action.payload;
+      })
+      .addCase(checkConnectionStatus.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.isConnected = null;
+        state.message = (action.payload as string) || 'Durum kontrolü başarısız';
       });
   },
 });
