@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { User, Building2, Share2, ImageIcon } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootState } from '../../redux/store';
 
 export default function TabsLayout() {
   const { isAuthenticated, isHydrated } = useSelector((state: RootState) => state.user);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (isHydrated && !isAuthenticated) {
@@ -21,15 +24,26 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#7196AC',
         tabBarInactiveTintColor: '#888',
         tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
           backgroundColor: '#1B272C',
           borderTopColor: '#273034',
-          paddingTop: 8,
-          paddingBottom: 8,
-          height: 65,
+          borderTopWidth: 1,
+          paddingTop: 12,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 8 : 12,
+          height: Platform.OS === 'ios' ? 75 + insets.bottom : 75,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
         },
       }}
     >

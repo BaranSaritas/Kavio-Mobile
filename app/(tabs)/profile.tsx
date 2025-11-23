@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { useDispatch, useSelector } from 'react-redux';
 import ProfileHeader from '../../components/layout/ProfileHeader';
@@ -28,6 +30,7 @@ const CURRENT_PAGE = '/(tabs)/profile';
 
 export default function ProfileScreen() {
   const dispatch = useDispatch<AppDispatch>();
+  const insets = useSafeAreaInsets();
   const { data, isLoading } = useSelector((state: RootState) => state.profile);
   const { updatedPage } = useSelector((state: RootState) => state.updatePage);
   const { user } = useSelector((state: RootState) => state.user);
@@ -178,9 +181,17 @@ export default function ProfileScreen() {
     );
   }
 
+  // Tab bar yüksekliğini hesapla - daha fazla boşluk
+  const tabBarHeight = Platform.OS === 'ios' ? 75 + insets.bottom : 75;
+
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: tabBarHeight + 30 // Tab bar + daha fazla ekstra boşluk
+        }}
+      >
         <ProfileHeader currentPage={CURRENT_PAGE} />
 
         <View style={styles.content}>
@@ -367,7 +378,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
   sectionTitle: {
     fontSize: 16,

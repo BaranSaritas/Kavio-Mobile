@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import Axios from '../../api/axiosInstance';
 import { generateMessage } from '../../utils/helpers';
 
-const baseURL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:8080/api';
+const baseURL = Constants.expoConfig?.extra?.apiUrl || 'https://api.kavio.co/api';
 
 export const login = createAsyncThunk(
   'user/login',

@@ -9,17 +9,13 @@ import {
   Users,
 } from 'lucide-react-native';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTheme } from '../../hooks/useTheme';
 import { logout } from '../../redux/slices/UserSlice';
 import { RootState } from '../../redux/store';
 
 export default function DrawerContent() {
   const dispatch = useDispatch();
   const router = useRouter();
-  const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const { data } = useSelector((state: RootState) => state.profile);
   const { profileImg } = useSelector((state: RootState) => state.userImages);
 
@@ -37,72 +33,55 @@ export default function DrawerContent() {
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.menuBackgroundColor }]}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-        <Text style={[styles.logo, { color: theme.primaryColor }]}>KAVIO</Text>
+      <View style={styles.header}>
+        <Text style={styles.logo}>KAVIO</Text>
         
         {/* Profile */}
         <View style={styles.profile}>
           {profileImg ? (
             <Image source={{ uri: profileImg }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primaryColor }]}>
-              <Text style={[styles.avatarText, { color: theme.textColor }]}>
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
                 {data?.userInfo?.firstName?.charAt(0)}
                 {data?.userInfo?.lastName?.charAt(0)}
               </Text>
             </View>
           )}
           <View style={styles.profileInfo}>
-            <Text style={[styles.name, { color: theme.textColor }]}>
+            <Text style={styles.name}>
               {data?.userInfo?.firstName} {data?.userInfo?.lastName}
             </Text>
-            <Text style={[styles.bio, { color: theme.labelColor }]}>
-              {data?.userInfo?.bio || 'Frontend Developer'}
-            </Text>
+            <Text style={styles.bio}>{data?.userInfo?.bio || 'Frontend Developer'}</Text>
           </View>
         </View>
       </View>
 
       {/* Menu Items */}
-      <ScrollView 
-        style={styles.menu} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.menuContent}
-      >
+      <ScrollView style={styles.menu} showsVerticalScrollIndicator={false}>
         {menuItems.map((item, index) => (
           <TouchableOpacity
             key={index}
-            style={[
-              styles.menuItem,
-              { borderBottomColor: theme.activeMenuBackgroundColor }
-            ]}
+            style={styles.menuItem}
             onPress={() => router.push(item.route as any)}
             activeOpacity={0.7}
           >
             <View style={styles.menuLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: theme.activeMenuBackgroundColor }]}>
-                <item.icon size={22} color={theme.activeMenuColor} />
-              </View>
-              <Text style={[styles.menuLabel, { color: theme.textColor }]}>{item.label}</Text>
+              <item.icon size={20} color="#fff" />
+              <Text style={styles.menuLabel}>{item.label}</Text>
             </View>
-            <ChevronRight size={22} color={theme.labelColor} />
+            <ChevronRight size={20} color="#8E8E8E" />
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       {/* Logout Button */}
-      <View style={{ paddingBottom: insets.bottom + 16 }}>
-        <TouchableOpacity 
-          style={styles.logoutButton} 
-          onPress={handleLogout} 
-          activeOpacity={0.8}
-        >
-          <LogOut size={22} color="#fff" />
-          <Text style={styles.logoutText}>Çıkış Yap</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
+        <LogOut size={20} color="#fff" />
+        <Text style={styles.logoutText}>Çıkış Yap</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -110,60 +89,59 @@ export default function DrawerContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#5A7E8C',
   },
   header: {
+    paddingTop: 60,
+    paddingBottom: 30,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   logo: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: 3,
-    marginBottom: 24,
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#E8D9C5',
+    letterSpacing: 2,
+    marginBottom: 30,
   },
   profile: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 15,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    elevation: 3,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   avatarPlaceholder: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#3C616D',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
   },
   avatarText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
+    color: '#fff',
   },
   profileInfo: {
     flex: 1,
   },
   name: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 4,
+    color: '#fff',
   },
   bio: {
     fontSize: 14,
+    color: '#D4D4D4',
+    marginTop: 2,
   },
   menu: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  menuContent: {
-    paddingTop: 8,
-    paddingBottom: 20,
   },
   menuItem: {
     flexDirection: 'row',
@@ -171,42 +149,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    flex: 1,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    gap: 15,
   },
   menuLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
+    color: '#fff',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    backgroundColor: '#DC3545',
+    gap: 10,
+    backgroundColor: '#CD6060',
     marginHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 14,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    marginBottom: 30,
+    paddingVertical: 15,
+    borderRadius: 10,
   },
   logoutText: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#fff',
   },
 });

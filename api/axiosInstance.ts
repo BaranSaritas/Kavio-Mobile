@@ -1,7 +1,7 @@
 import axios from "axios";
 import setupInterceptors from "./setupInterceptors";
 
-const baseURL ="http://localhost:8080/api";
+const baseURL ="https://api.kavio.co/api";
 
 const axiosInstance = axios.create({
   baseURL,
