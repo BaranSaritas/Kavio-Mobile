@@ -1,11 +1,14 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function ChartsScreen() {
+  const theme = useTheme();
+  
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       <View style={styles.content}>
-        <Text style={styles.title}>Analiz & İstatistikler</Text>
-        <Text style={styles.subtitle}>Bu sayfa yakında aktif olacak...</Text>
+        <Text style={[styles.title, { color: theme.textColor }]}>Analiz & İstatistikler</Text>
+        <Text style={[styles.subtitle, { color: theme.labelColor }]}>Bu sayfa yakında aktif olacak...</Text>
       </View>
     </ScrollView>
   );
@@ -14,7 +17,6 @@ export default function ChartsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141e22',
   },
   content: {
     flex: 1,
@@ -26,12 +28,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: '#A2A2A2',
     textAlign: 'center',
   },
 });

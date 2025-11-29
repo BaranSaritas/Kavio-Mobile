@@ -11,11 +11,13 @@ import {
   View,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTheme } from '../../hooks/useTheme';
 import { getContacts } from '../../redux/slices/ContactsSlice';
 import { AppDispatch, RootState } from '../../redux/store';
 
 export default function ContactsScreen() {
   const dispatch = useDispatch<AppDispatch>();
+  const theme = useTheme();
   const { user } = useSelector((state: RootState) => state.user);
   const { data: contacts, isLoading } = useSelector((state: RootState) => state.contacts);
   const cardId = user?.cardId;
@@ -47,19 +49,19 @@ export default function ContactsScreen() {
   };
 
   const renderContactCard = ({ item }: { item: any }) => (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.menuBackgroundColor }]}>
       <View style={styles.cardHeader}>
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarText}>
+        <View style={[styles.avatarPlaceholder, { backgroundColor: theme.activeMenuBackgroundColor }]}>
+          <Text style={[styles.avatarText, { color: theme.activeMenuColor }]}>
             {item.nameSurname?.charAt(0)?.toUpperCase() || 'U'}
           </Text>
         </View>
         <View style={styles.cardInfo}>
-          <Text style={styles.cardName}>{item.nameSurname || 'Unknown'}</Text>
+          <Text style={[styles.cardName, { color: theme.textColor }]}>{item.nameSurname || 'Unknown'}</Text>
           {item.location?.city && (
             <View style={styles.locationRow}>
-              <MapPin size={12} color="#A2A2A2" />
-              <Text style={styles.cardLocation}>
+              <MapPin size={12} color={theme.labelColor} />
+              <Text style={[styles.cardLocation, { color: theme.labelColor }]}>
                 {item.location.city}
                 {item.location.country ? `, ${item.location.country}` : ''}
               </Text>
@@ -67,13 +69,13 @@ export default function ContactsScreen() {
           )}
           {item.note && (
             <View style={styles.noteRow}>
-              <FileText size={12} color="#A2A2A2" />
-              <Text style={styles.cardNote} numberOfLines={1}>
+              <FileText size={12} color={theme.labelColor} />
+              <Text style={[styles.cardNote, { color: theme.labelColor }]} numberOfLines={1}>
                 {item.note}
               </Text>
             </View>
           )}
-          <Text style={styles.cardDate}>
+          <Text style={[styles.cardDate, { color: theme.jobColor }]}>
             {new Date(item.createdAt).toLocaleDateString('tr-TR', {
               day: '2-digit',
               month: 'short',
@@ -86,26 +88,26 @@ export default function ContactsScreen() {
       <View style={styles.cardActions}>
         {item.phone && (
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: theme.activeMenuBackgroundColor }]}
             onPress={() => handleContactPress('phone', item.phone)}
           >
-            <Phone size={18} color="#7196AC" />
+            <Phone size={18} color={theme.activeMenuColor} />
           </TouchableOpacity>
         )}
         {item.email && (
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: theme.activeMenuBackgroundColor }]}
             onPress={() => handleContactPress('email', item.email)}
           >
-            <Mail size={18} color="#7196AC" />
+            <Mail size={18} color={theme.activeMenuColor} />
           </TouchableOpacity>
         )}
         {item.phone && (
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: theme.activeMenuBackgroundColor }]}
             onPress={() => handleContactPress('whatsapp', item.phone)}
           >
-            <MessageCircle size={18} color="#7196AC" />
+            <MessageCircle size={18} color={theme.activeMenuColor} />
           </TouchableOpacity>
         )}
       </View>
@@ -114,38 +116,40 @@ export default function ContactsScreen() {
 
   if (isLoading && contacts.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#7196AC" />
+      <View style={[styles.centerContainer, { backgroundColor: theme.backgroundColor }]}>
+        <ActivityIndicator size="large" color={theme.activeMenuColor} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       {/* Empty State */}
       {contacts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Mail size={48} color="#444" />
-          <Text style={styles.emptyText}>No contacts yet</Text>
-          <Text style={styles.emptySubtext}>
+          <Mail size={48} color={theme.labelColor} />
+          <Text style={[styles.emptyText, { color: theme.textColor }]}>No contacts yet</Text>
+          <Text style={[styles.emptySubtext, { color: theme.labelColor }]}>
             People who visit your profile will appear here
           </Text>
         </View>
       ) : (
-        /* Contact List */
-<FlatList
-  data={contacts}
-  renderItem={renderContactCard}
-  keyExtractor={(item, index) =>
-    item?.id ? item.id.toString() : index.toString()
-  }
-  contentContainerStyle={styles.listContent}
-  showsVerticalScrollIndicator={false}
-  refreshControl={
-    <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} tintColor="#7196AC" />
-  }
-/>
-
+        <FlatList
+          data={contacts}
+          renderItem={renderContactCard}
+          keyExtractor={(item, index) =>
+            item?.id ? item.id.toString() : index.toString()
+          }
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isLoading} 
+              onRefresh={handleRefresh} 
+              tintColor={theme.activeMenuColor} 
+            />
+          }
+        />
       )}
     </View>
   );
@@ -154,11 +158,9 @@ export default function ContactsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141e22',
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: '#141e22',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -167,7 +169,6 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   card: {
-    backgroundColor: '#1B272C',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -181,7 +182,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#273034',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -189,7 +189,6 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#7196AC',
   },
   cardInfo: {
     flex: 1,
@@ -197,7 +196,6 @@ const styles = StyleSheet.create({
   cardName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 4,
   },
   locationRow: {
@@ -208,7 +206,6 @@ const styles = StyleSheet.create({
   },
   cardLocation: {
     fontSize: 13,
-    color: '#A2A2A2',
   },
   noteRow: {
     flexDirection: 'row',
@@ -218,13 +215,11 @@ const styles = StyleSheet.create({
   },
   cardNote: {
     fontSize: 13,
-    color: '#A2A2A2',
     fontStyle: 'italic',
     flex: 1,
   },
   cardDate: {
     fontSize: 12,
-    color: '#666',
     marginTop: 2,
   },
   cardActions: {
@@ -232,7 +227,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionButton: {
-    backgroundColor: '#273034',
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -248,14 +242,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#fff',
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#A2A2A2',
     textAlign: 'center',
     lineHeight: 20,
   },

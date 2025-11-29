@@ -24,12 +24,14 @@ import {
 import { Users, CheckCircle, Clock, XCircle, X, Check, Ban, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { useTheme } from '../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
 export default function ConnectionsScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const theme = useTheme();
   const { user } = useSelector((state: RootState) => state.user);
   const { data: connections, isLoading, actionLoading } = useSelector(
     (state: RootState) => state.connections
@@ -39,8 +41,8 @@ export default function ConnectionsScreen() {
   const [selectedConnection, setSelectedConnection] = useState<any>(null);
   const [showActionModal, setShowActionModal] = useState(false);
 
-  // Responsive columns
-  const numColumns = width > 768 ? 3 : width > 500 ? 2 : 1;
+  // Tek kolon kullan - daha temiz görünüm
+  const numColumns = 1;
 
   useEffect(() => {
     if (cardId) {
@@ -65,7 +67,7 @@ export default function ConnectionsScreen() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'ACCEPTED':
-        return <CheckCircle size={16} color="#70C094" />;
+        return <CheckCircle size={16} color={theme.submitButtonBackgroundColor} />;
       case 'PENDING':
         return <Clock size={16} color="#FFA500" />;
       case 'DECLINED':
@@ -232,7 +234,7 @@ export default function ConnectionsScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.card, { width: width / numColumns - 20 }]}
+        style={[styles.card, { backgroundColor: theme.menuBackgroundColor }]}
         onPress={() => handleConnectionPress(item)}
         activeOpacity={0.7}
       >
@@ -240,8 +242,8 @@ export default function ConnectionsScreen() {
           {avatar ? (
             <Image source={{ uri: avatar }} style={styles.avatar} />
           ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.activeMenuBackgroundColor }]}>
+              <Text style={[styles.avatarText, { color: theme.activeMenuColor }]}>
                 {otherUser.firstName?.charAt(0)?.toUpperCase() || 
                  otherUser.lastName?.charAt(0)?.toUpperCase() || 
                  'U'}
@@ -249,12 +251,12 @@ export default function ConnectionsScreen() {
             </View>
           )}
 
-          <Text style={styles.cardName} numberOfLines={1}>
+          <Text style={[styles.cardName, { color: theme.textColor }]} numberOfLines={1}>
             {fullName}
           </Text>
           
           {email && email !== fullName && (
-            <Text style={styles.cardEmail} numberOfLines={1}>
+            <Text style={[styles.cardEmail, { color: theme.labelColor }]} numberOfLines={1}>
               {email}
             </Text>
           )}
@@ -265,21 +267,21 @@ export default function ConnectionsScreen() {
               {companyLogo && (
                 <Image source={{ uri: companyLogo }} style={styles.companyLogo} />
               )}
-              <Text style={styles.cardCompany} numberOfLines={1}>
+              <Text style={[styles.cardCompany, { color: theme.activeMenuColor }]} numberOfLines={1}>
                 {companyName}
               </Text>
             </View>
           )}
 
           {/* Status Badge */}
-          <View style={styles.statusBadge}>
+          <View style={[styles.statusBadge, { backgroundColor: theme.activeMenuBackgroundColor }]}>
             {getStatusIcon(item.status)}
             <Text style={[styles.statusText, getStatusStyle(item.status)]}>
               {getStatusText(item.status)}
             </Text>
           </View>
 
-          <Text style={styles.cardDate}>
+          <Text style={[styles.cardDate, { color: theme.jobColor }]}>
             {new Date(item.createdAt).toLocaleDateString('tr-TR', {
               day: '2-digit',
               month: 'short',
@@ -293,9 +295,9 @@ export default function ConnectionsScreen() {
           onPress={() => handleActionPress(item)}
         >
           <View style={styles.moreIcon}>
-            <View style={styles.moreDot} />
-            <View style={styles.moreDot} />
-            <View style={styles.moreDot} />
+            <View style={[styles.moreDot, { backgroundColor: theme.labelColor }]} />
+            <View style={[styles.moreDot, { backgroundColor: theme.labelColor }]} />
+            <View style={[styles.moreDot, { backgroundColor: theme.labelColor }]} />
           </View>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -305,33 +307,33 @@ export default function ConnectionsScreen() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'ACCEPTED':
-        return { color: '#70C094' };
+        return { color: theme.submitButtonBackgroundColor };
       case 'PENDING':
         return { color: '#FFA500' };
       case 'DECLINED':
       case 'BLOCKED':
         return { color: '#ff6b6b' };
       default:
-        return { color: '#A2A2A2' };
+        return { color: theme.labelColor };
     }
   };
 
   if (isLoading && connections.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#7196AC" />
+      <View style={[styles.centerContainer, { backgroundColor: theme.backgroundColor }]}>
+        <ActivityIndicator size="large" color={theme.activeMenuColor} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       {/* Empty State */}
       {connections.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Users size={48} color="#444" />
-          <Text style={styles.emptyText}>No connections yet</Text>
-          <Text style={styles.emptySubtext}>
+          <Users size={48} color={theme.labelColor} />
+          <Text style={[styles.emptyText, { color: theme.textColor }]}>No connections yet</Text>
+          <Text style={[styles.emptySubtext, { color: theme.labelColor }]}>
             Start networking to build your connections
           </Text>
         </View>
@@ -349,7 +351,7 @@ export default function ConnectionsScreen() {
             <RefreshControl
               refreshing={isLoading}
               onRefresh={handleRefresh}
-              tintColor="#7196AC"
+              tintColor={theme.activeMenuColor}
             />
           }
         />
@@ -367,11 +369,11 @@ export default function ConnectionsScreen() {
           activeOpacity={1}
           onPress={() => setShowActionModal(false)}
         >
-          <View style={styles.actionModal}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>İşlemler</Text>
+          <View style={[styles.actionModal, { backgroundColor: theme.menuBackgroundColor }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.activeMenuBackgroundColor }]}>
+              <Text style={[styles.modalTitle, { color: theme.textColor }]}>İşlemler</Text>
               <TouchableOpacity onPress={() => setShowActionModal(false)}>
-                <X size={24} color="#fff" />
+                <X size={24} color={theme.textColor} />
               </TouchableOpacity>
             </View>
 
@@ -382,8 +384,8 @@ export default function ConnectionsScreen() {
                   onPress={handleAccept}
                   disabled={actionLoading}
                 >
-                  <Check size={20} color="#70C094" />
-                  <Text style={styles.actionText}>Kabul Et</Text>
+                  <Check size={20} color={theme.submitButtonBackgroundColor} />
+                  <Text style={[styles.actionText, { color: theme.textColor }]}>Kabul Et</Text>
                 </TouchableOpacity>
               )}
 
@@ -394,7 +396,7 @@ export default function ConnectionsScreen() {
                   disabled={actionLoading}
                 >
                   <X size={20} color="#FFA500" />
-                  <Text style={styles.actionText}>Reddet</Text>
+                  <Text style={[styles.actionText, { color: theme.textColor }]}>Reddet</Text>
                 </TouchableOpacity>
               )}
 
@@ -419,7 +421,7 @@ export default function ConnectionsScreen() {
 
             {actionLoading && (
               <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#7196AC" />
+                <ActivityIndicator size="large" color={theme.activeMenuColor} />
               </View>
             )}
           </View>
@@ -432,23 +434,20 @@ export default function ConnectionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#141e22',
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: '#141e22',
     justifyContent: 'center',
     alignItems: 'center',
   },
   listContent: {
-    padding: 10,
+    padding: 15,
     paddingBottom: 30,
   },
   card: {
-    backgroundColor: '#1B272C',
     borderRadius: 12,
     padding: 16,
-    margin: 5,
+    marginBottom: 12,
     position: 'relative',
   },
   cardContent: {
@@ -464,7 +463,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#273034',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -472,18 +470,15 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#7196AC',
   },
   cardName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
     marginBottom: 4,
     textAlign: 'center',
   },
   cardEmail: {
     fontSize: 12,
-    color: '#A2A2A2',
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -500,14 +495,12 @@ const styles = StyleSheet.create({
   },
   cardCompany: {
     fontSize: 13,
-    color: '#7196AC',
     textAlign: 'center',
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#273034',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -519,7 +512,6 @@ const styles = StyleSheet.create({
   },
   cardDate: {
     fontSize: 11,
-    color: '#666',
     textAlign: 'center',
   },
   moreButton: {
@@ -536,7 +528,6 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#8E8E8E',
   },
   emptyContainer: {
     flex: 1,
@@ -547,14 +538,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#fff',
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#A2A2A2',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -564,7 +553,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   actionModal: {
-    backgroundColor: '#1B272C',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 30,
@@ -575,12 +563,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#273034',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#fff',
   },
   actionList: {
     padding: 10,
@@ -596,7 +582,6 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#fff',
   },
   loadingOverlay: {
     position: 'absolute',

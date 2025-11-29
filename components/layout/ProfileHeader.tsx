@@ -1,14 +1,18 @@
 import { useRouter } from 'expo-router';
 import { Bell, Bookmark, ChevronDown, ChevronRight, Edit, LogOut, Menu, MessageCircle, Palette, QrCode, Settings, UserCheck, Users, X } from 'lucide-react-native';
-import { useState } from 'react';
-import { Image, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, Image, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../hooks/useTheme';
 import { setUpdatedPage } from '../../redux/slices/UpdatePageSlice';
 import { logout } from '../../redux/slices/UserSlice';
 import { RootState } from '../../redux/store';
 import { updatePageChecker } from '../../utils/helpers';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.85;
+const STATUS_BAR_HEIGHT = StatusBar.currentHeight || 0;
 
 interface ProfileHeaderProps {
   currentPage: string;
@@ -25,8 +29,42 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
 
   const [showMenu, setShowMenu] = useState(false);
   const [visitorsExpanded, setVisitorsExpanded] = useState(false);
+  
+  // Animation
+  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const isUpdated = updatePageChecker(currentPage, updatedPage);
+
+  useEffect(() => {
+    if (showMenu) {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: -DRAWER_WIDTH,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [showMenu]);
 
   const handleEditPress = () => {
     if (isUpdated) {
@@ -40,6 +78,21 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
     dispatch(logout());
     setShowMenu(false);
     router.replace('/(auth)/login');
+  };
+
+  const closeMenu = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -DRAWER_WIDTH,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setShowMenu(false));
   };
 
   const menuItems = [
@@ -58,6 +111,10 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
     { icon: Settings, label: 'Settings', route: '/settings' },
   ];
 
+  // Safe area değerlerini hesapla
+  const topPadding = Platform.OS === 'android' ? STATUS_BAR_HEIGHT + 16 : insets.top + 16;
+  const bottomPadding = Platform.OS === 'android' ? 24 : insets.bottom + 16;
+
   return (
     <>
       <View style={styles.header}>
@@ -69,7 +126,7 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
             <View style={[styles.bannerPlaceholder, { backgroundColor: theme.headerBackgroundColor }]} />
           )}
           
-          {/* Hamburger Menu Button - Safe Area ile */}
+          {/* Hamburger Menu Button */}
           <TouchableOpacity 
             style={[
               styles.menuBtn, 
@@ -125,115 +182,142 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
         </View>
       </View>
 
-      {/* Menu Modal - Full Screen */}
-      <Modal visible={showMenu} transparent animationType="slide">
-        <View style={[styles.menuModal, { backgroundColor: theme.menuBackgroundColor }]}>
-          {/* Header with Safe Area */}
-          <View style={[styles.modalHeader, { paddingTop: insets.top + 16 }]}>
-            <Text style={[styles.logo, { color: theme.primaryColor }]}>KAVIO</Text>
-            <TouchableOpacity 
-              onPress={() => setShowMenu(false)}
-              style={styles.closeButton}
-            >
-              <X size={28} color={theme.textColor} />
-            </TouchableOpacity>
-          </View>
+      {/* Side Drawer Menu */}
+      <Modal 
+        visible={showMenu} 
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={closeMenu}
+      >
+        <View style={styles.modalContainer}>
+          {/* Backdrop */}
+          <Animated.View 
+            style={[
+              styles.backdrop,
+              { opacity: fadeAnim }
+            ]}
+          >
+            <Pressable style={styles.backdropPressable} onPress={closeMenu} />
+          </Animated.View>
 
-          {/* Profile */}
-          <View style={styles.modalProfile}>
-            {profileImg ? (
-              <Image source={{ uri: profileImg }} style={styles.modalAvatar} />
-            ) : (
-              <View style={[styles.modalAvatarPlaceholder, { backgroundColor: theme.primaryColor }]}>
-                <Text style={[styles.modalAvatarText, { color: theme.textColor }]}>
-                  {data?.userInfo?.firstName?.charAt(0)}
-                  {data?.userInfo?.lastName?.charAt(0)}
+          {/* Drawer */}
+          <Animated.View 
+            style={[
+              styles.drawer,
+              { 
+                backgroundColor: theme.menuBackgroundColor,
+                transform: [{ translateX: slideAnim }],
+                paddingTop: topPadding,
+                paddingBottom: bottomPadding,
+              }
+            ]}
+          >
+            {/* Header */}
+            <View style={styles.drawerHeader}>
+              <Text style={[styles.logo, { color: theme.primaryColor }]}>KAVIO</Text>
+              <TouchableOpacity 
+                onPress={closeMenu}
+                style={styles.closeButton}
+              >
+                <X size={28} color={theme.textColor} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Profile */}
+            <View style={styles.drawerProfile}>
+              {profileImg ? (
+                <Image source={{ uri: profileImg }} style={styles.drawerAvatar} />
+              ) : (
+                <View style={[styles.drawerAvatarPlaceholder, { backgroundColor: theme.primaryColor }]}>
+                  <Text style={[styles.drawerAvatarText, { color: theme.textColor }]}>
+                    {data?.userInfo?.firstName?.charAt(0)}
+                    {data?.userInfo?.lastName?.charAt(0)}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.drawerProfileInfo}>
+                <Text style={[styles.drawerName, { color: theme.textColor }]}>
+                  {data?.userInfo?.firstName} {data?.userInfo?.lastName}
+                </Text>
+                <Text style={[styles.drawerBio, { color: theme.labelColor }]}>
+                  {data?.userInfo?.bio || 'Frontend Developer'}
                 </Text>
               </View>
-            )}
-            <View style={styles.modalProfileInfo}>
-              <Text style={[styles.modalName, { color: theme.textColor }]}>
-                {data?.userInfo?.firstName} {data?.userInfo?.lastName}
-              </Text>
-              <Text style={[styles.modalBio, { color: theme.labelColor }]}>
-                {data?.userInfo?.bio || 'Frontend Developer'}
-              </Text>
             </View>
-          </View>
 
-          {/* Menu Items */}
-          <ScrollView 
-            style={styles.modalMenu} 
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.modalMenuContent}
-          >
-            {menuItems.map((item, index) => (
-              <View key={index}>
-                <TouchableOpacity
-                  style={[
-                    styles.modalMenuItem,
-                    { borderBottomColor: theme.activeMenuBackgroundColor }
-                  ]}
-                  onPress={() => {
-                    if (item.expandable) {
-                      setVisitorsExpanded(!visitorsExpanded);
-                    } else if (item.route) {
-                      setShowMenu(false);
-                      router.push(item.route as any);
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.menuItemContent}>
-                    <View style={[styles.iconContainer, { backgroundColor: theme.activeMenuBackgroundColor }]}>
-                      <item.icon size={22} color={theme.activeMenuColor} />
+            {/* Menu Items */}
+            <ScrollView 
+              style={styles.drawerMenu} 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.drawerMenuContent}
+            >
+              {menuItems.map((item, index) => (
+                <View key={index}>
+                  <TouchableOpacity
+                    style={[
+                      styles.drawerMenuItem,
+                      { borderBottomColor: theme.activeMenuBackgroundColor }
+                    ]}
+                    onPress={() => {
+                      if (item.expandable) {
+                        setVisitorsExpanded(!visitorsExpanded);
+                      } else if (item.route) {
+                        closeMenu();
+                        setTimeout(() => router.push(item.route as any), 300);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.menuItemContent}>
+                      <View style={[styles.iconContainer, { backgroundColor: theme.activeMenuBackgroundColor }]}>
+                        <item.icon size={22} color={theme.activeMenuColor} />
+                      </View>
+                      <Text style={[styles.drawerMenuLabel, { color: theme.textColor }]}>{item.label}</Text>
                     </View>
-                    <Text style={[styles.modalMenuLabel, { color: theme.textColor }]}>{item.label}</Text>
-                  </View>
-                  {item.expandable ? (
-                    visitorsExpanded ? (
-                      <ChevronDown size={22} color={theme.labelColor} />
+                    {item.expandable ? (
+                      visitorsExpanded ? (
+                        <ChevronDown size={22} color={theme.labelColor} />
+                      ) : (
+                        <ChevronRight size={22} color={theme.labelColor} />
+                      )
                     ) : (
                       <ChevronRight size={22} color={theme.labelColor} />
-                    )
-                  ) : (
-                    <ChevronRight size={22} color={theme.labelColor} />
-                  )}
-                </TouchableOpacity>
+                    )}
+                  </TouchableOpacity>
 
-                {/* Submenu Items */}
-                {item.expandable && visitorsExpanded && item.children && (
-                  <View style={[styles.submenu, { backgroundColor: theme.activeMenuBackgroundColor }]}>
-                    {item.children.map((subItem, subIndex) => (
-                      <TouchableOpacity
-                        key={subIndex}
-                        style={[
-                          styles.submenuItem,
-                          { borderBottomColor: theme.menuBackgroundColor }
-                        ]}
-                        onPress={() => {
-                          setShowMenu(false);
-                          router.push(subItem.route as any);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.submenuContent}>
-                          <View style={[styles.submenuIconContainer, { backgroundColor: theme.menuBackgroundColor }]}>
-                            <subItem.icon size={18} color={theme.activeMenuColor} />
+                  {/* Submenu Items */}
+                  {item.expandable && visitorsExpanded && item.children && (
+                    <View style={[styles.submenu, { backgroundColor: theme.activeMenuBackgroundColor }]}>
+                      {item.children.map((subItem, subIndex) => (
+                        <TouchableOpacity
+                          key={subIndex}
+                          style={[
+                            styles.submenuItem,
+                            { borderBottomColor: theme.menuBackgroundColor }
+                          ]}
+                          onPress={() => {
+                            closeMenu();
+                            setTimeout(() => router.push(subItem.route as any), 300);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.submenuContent}>
+                            <View style={[styles.submenuIconContainer, { backgroundColor: theme.menuBackgroundColor }]}>
+                              <subItem.icon size={18} color={theme.activeMenuColor} />
+                            </View>
+                            <Text style={[styles.submenuLabel, { color: theme.textColor }]}>{subItem.label}</Text>
                           </View>
-                          <Text style={[styles.submenuLabel, { color: theme.textColor }]}>{subItem.label}</Text>
-                        </View>
-                        <ChevronRight size={18} color={theme.labelColor} />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))}
-          </ScrollView>
+                          <ChevronRight size={18} color={theme.labelColor} />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
 
-          {/* Logout - with Safe Area Bottom */}
-          <View style={{ paddingBottom: insets.bottom + 16 }}>
+            {/* Logout Button */}
             <TouchableOpacity 
               style={[styles.logoutBtn, { backgroundColor: '#DC3545' }]} 
               onPress={handleLogout}
@@ -242,7 +326,7 @@ export default function ProfileHeader({ currentPage }: ProfileHeaderProps) {
               <LogOut size={22} color="#fff" />
               <Text style={styles.logoutText}>Çıkış Yap</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </>
@@ -302,12 +386,31 @@ const styles = StyleSheet.create({
   name: { fontSize: 22, fontWeight: '700' },
   bio: { fontSize: 15, marginTop: 4 },
 
-  // Modal - Full Screen
-  menuModal: { 
+  // Modal & Drawer
+  modalContainer: {
     flex: 1,
-    paddingHorizontal: 20
   },
-  modalHeader: { 
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  backdropPressable: {
+    flex: 1,
+  },
+  drawer: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: DRAWER_WIDTH,
+    paddingHorizontal: 20,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  drawerHeader: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
@@ -321,7 +424,7 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  modalProfile: { 
+  drawerProfile: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 16, 
@@ -330,13 +433,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)'
   },
-  modalAvatar: { 
+  drawerAvatar: { 
     width: 64, 
     height: 64, 
     borderRadius: 32,
     elevation: 3,
   },
-  modalAvatarPlaceholder: { 
+  drawerAvatarPlaceholder: { 
     width: 64, 
     height: 64, 
     borderRadius: 32, 
@@ -344,28 +447,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
   },
-  modalAvatarText: { 
+  drawerAvatarText: { 
     fontSize: 22, 
     fontWeight: '700'
   },
-  modalProfileInfo: {
+  drawerProfileInfo: {
     flex: 1
   },
-  modalName: { 
+  drawerName: { 
     fontSize: 18, 
     fontWeight: '700',
     marginBottom: 4
   },
-  modalBio: { 
+  drawerBio: { 
     fontSize: 14
   },
-  modalMenu: { 
+  drawerMenu: { 
     flex: 1
   },
-  modalMenuContent: {
+  drawerMenuContent: {
     paddingBottom: 20,
   },
-  modalMenuItem: { 
+  drawerMenuItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'space-between', 
@@ -385,7 +488,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  modalMenuLabel: { 
+  drawerMenuLabel: { 
     fontSize: 16, 
     fontWeight: '600'
   },
@@ -425,7 +528,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 16, 
     borderRadius: 14,
-    marginTop: 12,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

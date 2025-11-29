@@ -13,10 +13,17 @@ export const login = createAsyncThunk(
     try {
       const res = await axios.post(`${baseURL}/user/login`, loginData);
       if (res?.status === 200 && res?.data?.accessToken) {
-        await AsyncStorage.setItem('accessToken', res?.data?.accessToken);
-        await AsyncStorage.setItem('refreshToken', res?.data?.refreshToken);
+        const { accessToken, refreshToken } = res.data;
+        
+        // Token'ları AsyncStorage'a kaydet
+        await AsyncStorage.setItem('accessToken', accessToken);
+        await AsyncStorage.setItem('refreshToken', refreshToken);
         await AsyncStorage.setItem('isLogin', 'true');
-        return res?.data;
+        
+        // Axios instance'ın default header'ına token'ı hemen ekle
+        Axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        
+        return res.data;
       }
     } catch (error: any) {
       return thunkAPI.rejectWithValue(generateMessage(error, 'Login Error'));
@@ -61,6 +68,10 @@ export const getUserImages = createAsyncThunk(
 export const hydrateAuth = createAsyncThunk('auth/hydrate', async () => {
   const token = await AsyncStorage.getItem('accessToken');
   if (!token) return null;
+  
+  // Token varsa axios header'a ekle
+  Axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  
   try {
     const res = await Axios.get('/user/info');
     if (res?.status === 200 && res?.data?.id) {
@@ -68,6 +79,8 @@ export const hydrateAuth = createAsyncThunk('auth/hydrate', async () => {
     }
   } catch (error) {
     console.log('error', error);
+    // Hata durumunda header'ı temizle
+    delete Axios.defaults.headers.common['Authorization'];
     return null;
   }
 });
@@ -131,9 +144,18 @@ const UserSlice = createSlice({
       state.message = '';
       state.user = null;
       state.isAuthenticated = false;
+      
+      // Axios header'dan token'ı kaldır
+      delete Axios.defaults.headers.common['Authorization'];
+      
       AsyncStorage.removeItem('accessToken');
       AsyncStorage.removeItem('refreshToken');
       AsyncStorage.removeItem('isLogin');
+    },
+    updateUserSettingTheme(state, action) {
+      if (state.user?.card?.setting) {
+        state.user.card.setting.theme = action.payload;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -218,5 +240,5 @@ const UserSlice = createSlice({
   },
 });
 
-export const { userSliceReset, logout } = UserSlice.actions;
+export const { userSliceReset, logout, updateUserSettingTheme } = UserSlice.actions;
 export default UserSlice.reducer;
